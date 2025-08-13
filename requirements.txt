@@ -3,7 +3,6 @@ praw
 requests
 langchain
 chromadb
-sentence-transformers
 python-dotenv
 pandas
 numpy
@@ -14,3 +13,11 @@ transformers
 torch
 ragas
 tqdm
+streamlit
+python-dotenv
+requests
+chromadb
+langchain-groq
+praw
+pandas
+matplotlib
