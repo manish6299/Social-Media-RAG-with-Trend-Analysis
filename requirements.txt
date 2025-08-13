@@ -1,0 +1,16 @@
+tweepy
+praw
+requests
+langchain
+chromadb
+sentence-transformers
+python-dotenv
+pandas
+numpy
+matplotlib
+scikit-learn
+nltk
+transformers
+torch
+ragas
+tqdm
