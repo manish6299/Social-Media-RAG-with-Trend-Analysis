@@ -1,38 +1,45 @@
-#embeddings.py
-
 import os
 from typing import List
 from dotenv import load_dotenv
-
-# Try to import sentence_transformers (for local embeddings)
-try:
-    from sentence_transformers import SentenceTransformer
-    LOCAL_EMBEDDINGS_AVAILABLE = True
-except ImportError:
-    LOCAL_EMBEDDINGS_AVAILABLE = False
+import requests
 
 load_dotenv()
 
-class LocalEmbeddings:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        self.model = SentenceTransformer(model_name)
-        
+class HuggingFaceEmbeddings:
+    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
+        self.api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_name}"
+        self.headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+        self.model_name = model_name
+
     def embed_query(self, text: str) -> List[float]:
         return self.embed_documents([text])[0]
-        
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.model.encode(texts).tolist()
+        response = requests.post(
+            self.api_url,
+            headers=self.headers,
+            json={"inputs": texts, "options": {"wait_for_model": True}}
+        )
+        if response.status_code != 200:
+            raise Exception(f"HuggingFace API Error: {response.text}")
+        return response.json()
 
 def get_embeddings_model():
-
-    if not LOCAL_EMBEDDINGS_AVAILABLE:
-        raise ImportError("sentence-transformers not installed. Run: pip install sentence-transformers")
+    # First try using HuggingFace API
+    if os.getenv('HF_API_KEY'):
+        print("Using HuggingFace API embeddings")
+        return HuggingFaceEmbeddings()
     
-    print("Using LOCAL embeddings")
-    return LocalEmbeddings()
+    # Fallback to Chroma's default embeddings if no API key
+    try:
+        from chromadb.utils import embedding_functions
+        print("Using Chroma's default embeddings as fallback")
+        return embedding_functions.DefaultEmbeddingFunction()
+    except ImportError:
+        raise ImportError("Neither HuggingFace API nor Chroma embeddings available. Please set HF_API_KEY")
 
 if __name__ == "__main__":
-    print("Testing Local Embeddings...")
+    print("Testing Embeddings...")
     try:
         emb = get_embeddings_model()
         test_embedding = emb.embed_query("Test query")
