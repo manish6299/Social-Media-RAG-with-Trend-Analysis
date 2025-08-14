@@ -7,7 +7,7 @@ load_dotenv()
 
 class HuggingFaceEmbeddings:
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-        self.api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_name}"
+        self.api_url = f"https://api-inference.huggingface.co/models/{model_name}"
         self.headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
         self.model_name = model_name
 
@@ -18,19 +18,17 @@ class HuggingFaceEmbeddings:
         response = requests.post(
             self.api_url,
             headers=self.headers,
-            json={"inputs": texts, "options": {"wait_for_model": True}}
+            json={"inputs": texts}
         )
         if response.status_code != 200:
             raise Exception(f"HuggingFace API Error: {response.text}")
         return response.json()
 
 def get_embeddings_model():
-    # First try using HuggingFace API
     if os.getenv('HF_API_KEY'):
         print("Using HuggingFace API embeddings")
         return HuggingFaceEmbeddings()
     
-    # Fallback to Chroma's default embeddings if no API key
     try:
         from chromadb.utils import embedding_functions
         print("Using Chroma's default embeddings as fallback")
